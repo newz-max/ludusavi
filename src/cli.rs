@@ -150,6 +150,7 @@ pub fn run(sub: Subcommand, no_manifest_update: bool, try_manifest_update: bool)
     let mut duplicate_detector = DuplicateDetector::default();
 
     log::debug!("Config on startup: {config:?}");
+    let gui = sub.gui();
 
     match sub {
         Subcommand::Backup {
@@ -159,7 +160,6 @@ pub fn run(sub: Subcommand, no_manifest_update: bool, try_manifest_update: bool)
             no_force_cloud_conflict,
             wine_prefix,
             api,
-            gui,
             sort,
             format,
             compression,
@@ -172,6 +172,7 @@ pub fn run(sub: Subcommand, no_manifest_update: bool, try_manifest_update: bool)
             include_disabled,
             ask_downgrade,
             games,
+            ..
         } => {
             let games = parse_games(games);
 
@@ -466,7 +467,6 @@ pub fn run(sub: Subcommand, no_manifest_update: bool, try_manifest_update: bool)
             force,
             no_force_cloud_conflict,
             api,
-            gui,
             sort,
             backup,
             cloud_sync,
@@ -475,6 +475,7 @@ pub fn run(sub: Subcommand, no_manifest_update: bool, try_manifest_update: bool)
             include_disabled,
             ask_downgrade,
             games,
+            ..
         } => {
             let games = parse_games(games);
 
@@ -979,8 +980,8 @@ pub fn run(sub: Subcommand, no_manifest_update: bool, try_manifest_update: bool)
                 force,
                 preview,
                 api,
-                gui,
                 games,
+                ..
             } => {
                 let games = parse_games(games);
 
@@ -1023,8 +1024,8 @@ pub fn run(sub: Subcommand, no_manifest_update: bool, try_manifest_update: bool)
                 force,
                 preview,
                 api,
-                gui,
                 games,
+                ..
             } => {
                 let games = parse_games(games);
 
@@ -1070,7 +1071,6 @@ pub fn run(sub: Subcommand, no_manifest_update: bool, try_manifest_update: bool)
             no_backup,
             no_restore,
             no_force_cloud_conflict,
-            gui,
             path,
             format,
             compression,
@@ -1081,6 +1081,7 @@ pub fn run(sub: Subcommand, no_manifest_update: bool, try_manifest_update: bool)
             no_cloud_sync,
             ask_downgrade,
             commands,
+            ..
         } => {
             let manifest = load_manifest(&config, &mut cache, no_manifest_update, try_manifest_update)?;
             let layout = BackupLayout::new(config.restore.path.clone());
@@ -1188,6 +1189,7 @@ pub fn run(sub: Subcommand, no_manifest_update: bool, try_manifest_update: bool)
                         preview,
                         path: path.clone(),
                         api: Default::default(),
+                        #[cfg(feature = "app")]
                         gui,
                         sort: Default::default(),
                         backup: Default::default(),
@@ -1255,6 +1257,7 @@ pub fn run(sub: Subcommand, no_manifest_update: bool, try_manifest_update: bool)
                         path,
                         wine_prefix: Default::default(),
                         api: Default::default(),
+                        #[cfg(feature = "app")]
                         gui,
                         sort: Default::default(),
                         format,
@@ -1318,6 +1321,7 @@ pub fn run(sub: Subcommand, no_manifest_update: bool, try_manifest_update: bool)
             };
             println!("{serialized}");
         }
+        #[cfg(feature = "app")]
         Subcommand::Gui { .. } => {
             unreachable!("`gui` command must be handled in main");
         }

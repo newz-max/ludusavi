@@ -140,12 +140,11 @@ fn main() {
         println!();
         return;
     };
-    let gui = sub.gui();
     let force = sub.force();
 
     if let Err(e) = cli::run(sub, args.no_manifest_update, args.try_manifest_update) {
         failed = true;
-        cli::show_error(&[], &e, gui, force);
+        cli::show_error(&[], &e, false, force);
     }
 
     flush_logger();

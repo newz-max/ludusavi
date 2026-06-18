@@ -166,6 +166,7 @@ pub enum Subcommand {
         api: bool,
 
         /// Use GUI dialogs for prompts and some information.
+        #[cfg(feature = "app")]
         #[clap(long)]
         gui: bool,
 
@@ -268,6 +269,7 @@ pub enum Subcommand {
         api: bool,
 
         /// Use GUI dialogs for prompts and some information.
+        #[cfg(feature = "app")]
         #[clap(long)]
         gui: bool,
 
@@ -465,6 +467,7 @@ pub enum Subcommand {
         no_force_cloud_conflict: bool,
 
         /// Show a GUI notification during restore/backup
+        #[cfg(feature = "app")]
         #[clap(long)]
         gui: bool,
 
@@ -555,6 +558,7 @@ pub enum Subcommand {
         kind: SchemaSubcommand,
     },
     /// Open the GUI.
+    #[cfg(feature = "app")]
     Gui {
         /// Open the custom game screen,
         /// then either create a new entry with this name
@@ -578,23 +582,34 @@ impl Subcommand {
             Self::Wrap { force, .. } => *force,
             Self::Api { .. } => false,
             Self::Schema { .. } => false,
+            #[cfg(feature = "app")]
             Self::Gui { .. } => false,
         }
     }
 
     pub fn gui(&self) -> bool {
         match self {
+            #[cfg(feature = "app")]
             Self::Backup { gui, .. } => *gui,
+            #[cfg(not(feature = "app"))]
+            Self::Backup { .. } => false,
+            #[cfg(feature = "app")]
             Self::Restore { gui, .. } => *gui,
+            #[cfg(not(feature = "app"))]
+            Self::Restore { .. } => false,
             Self::Complete { .. } => false,
             Self::Backups { .. } => false,
             Self::Find { .. } => false,
             Self::Manifest { .. } => false,
             Self::Config { .. } => false,
             Self::Cloud { sub } => sub.gui(),
+            #[cfg(feature = "app")]
             Self::Wrap { gui, .. } => *gui,
+            #[cfg(not(feature = "app"))]
+            Self::Wrap { .. } => false,
             Self::Api { .. } => false,
             Self::Schema { .. } => false,
+            #[cfg(feature = "app")]
             Self::Gui { .. } => true,
         }
     }
@@ -699,6 +714,7 @@ pub enum CloudSubcommand {
         api: bool,
 
         /// Use GUI dialogs for prompts and some information.
+        #[cfg(feature = "app")]
         #[clap(long)]
         gui: bool,
 
@@ -733,6 +749,7 @@ pub enum CloudSubcommand {
         api: bool,
 
         /// Use GUI dialogs for prompts and some information.
+        #[cfg(feature = "app")]
         #[clap(long)]
         gui: bool,
 
@@ -755,8 +772,14 @@ impl CloudSubcommand {
     pub fn gui(&self) -> bool {
         match self {
             Self::Set { .. } => false,
+            #[cfg(feature = "app")]
             Self::Upload { gui, .. } => *gui,
+            #[cfg(not(feature = "app"))]
+            Self::Upload { .. } => false,
+            #[cfg(feature = "app")]
             Self::Download { gui, .. } => *gui,
+            #[cfg(not(feature = "app"))]
+            Self::Download { .. } => false,
         }
     }
 }
@@ -932,6 +955,7 @@ mod tests {
                     no_force_cloud_conflict: false,
                     wine_prefix: None,
                     api: false,
+                    #[cfg(feature = "app")]
                     gui: false,
                     sort: None,
                     format: None,
@@ -964,6 +988,7 @@ mod tests {
                 "--wine-prefix",
                 "tests/wine-prefix",
                 "--api",
+                #[cfg(feature = "app")]
                 "--gui",
                 "--sort",
                 "name",
@@ -996,6 +1021,7 @@ mod tests {
                     no_force_cloud_conflict: true,
                     wine_prefix: Some(StrictPath::relative(s("tests/wine-prefix"), Some(repo_raw()))),
                     api: true,
+                    #[cfg(feature = "app")]
                     gui: true,
                     sort: Some(CliSort::Name),
                     format: Some(BackupFormat::Zip),
@@ -1030,6 +1056,7 @@ mod tests {
                     no_force_cloud_conflict: false,
                     wine_prefix: None,
                     api: false,
+                    #[cfg(feature = "app")]
                     gui: false,
                     sort: None,
                     format: None,
@@ -1072,6 +1099,7 @@ mod tests {
                         no_force_cloud_conflict: false,
                         wine_prefix: None,
                         api: false,
+                        #[cfg(feature = "app")]
                         gui: false,
                         sort: Some(sort),
                         format: None,
@@ -1107,6 +1135,7 @@ mod tests {
                     no_force_cloud_conflict: false,
                     wine_prefix: None,
                     api: false,
+                    #[cfg(feature = "app")]
                     gui: false,
                     sort: None,
                     format: None,
@@ -1140,6 +1169,7 @@ mod tests {
                     force: false,
                     no_force_cloud_conflict: false,
                     api: false,
+                    #[cfg(feature = "app")]
                     gui: false,
                     sort: None,
                     backup: None,
@@ -1191,6 +1221,7 @@ mod tests {
                     force: true,
                     no_force_cloud_conflict: true,
                     api: true,
+                    #[cfg(feature = "app")]
                     gui: false,
                     sort: Some(CliSort::Name),
                     backup: Some(s(".")),
@@ -1236,6 +1267,7 @@ mod tests {
                         force: false,
                         no_force_cloud_conflict: false,
                         api: false,
+                        #[cfg(feature = "app")]
                         gui: false,
                         sort: Some(sort),
                         backup: None,
@@ -1519,6 +1551,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "app")]
     fn accepts_cli_gui_with_minimal_arguments() {
         check_args(
             &["ludusavi", "gui"],
@@ -1533,6 +1566,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "app")]
     fn accepts_cli_gui_with_all_arguments() {
         check_args(
             &["ludusavi", "gui", "--custom-game", "foo"],
@@ -1545,6 +1579,21 @@ mod tests {
                     custom_game: Some("foo".to_string()),
                 }),
             },
+        );
+    }
+
+    #[test]
+    #[cfg(not(feature = "app"))]
+    fn rejects_cli_gui_subcommand() {
+        check_args_err(&["ludusavi", "gui"], clap::error::ErrorKind::InvalidSubcommand);
+    }
+
+    #[test]
+    #[cfg(not(feature = "app"))]
+    fn rejects_cli_backup_gui_argument() {
+        check_args_err(
+            &["ludusavi", "backup", "--gui"],
+            clap::error::ErrorKind::UnknownArgument,
         );
     }
 }
