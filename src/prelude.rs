@@ -352,6 +352,14 @@ pub fn unregister_sigint() {
     }
 }
 
+#[cfg(not(feature = "app"))]
+pub fn register_sigint() -> std::sync::Arc<std::sync::atomic::AtomicBool> {
+    std::sync::Arc::new(std::sync::atomic::AtomicBool::new(false))
+}
+
+#[cfg(not(feature = "app"))]
+pub fn unregister_sigint() {}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum EditDirection {
     Up,

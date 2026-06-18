@@ -2,7 +2,7 @@ fn main() {
     println!("cargo:rerun-if-env-changed=LUDUSAVI_VERSION");
     println!("cargo:rerun-if-env-changed=LUDUSAVI_VARIANT");
 
-    #[cfg(windows)]
+    #[cfg(all(windows, feature = "app"))]
     {
         println!("cargo:rerun-if-changed=assets/windows/manifest.rc");
         println!("cargo:rerun-if-changed=assets/windows/manifest.xml");

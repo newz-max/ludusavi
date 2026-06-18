@@ -12,19 +12,28 @@ license = "MIT"
 name = "ludusavi"
 required-features = ["app"]
 
+[[bin]]
+name = "ludusavi-cli"
+path = "src/cli_main.rs"
+required-features = ["cli"]
+
 [features]
 default = ["app"]
-# GUI and CLI
-app = [
+# CLI
+cli = [
     "dep:clap",
     "dep:clap_complete",
     "dep:dialoguer",
     "dep:flexi_logger",
+    "dep:indicatif",
+    "dep:signal-hook",
+]
+# GUI and CLI
+app = [
+    "cli",
     "dep:iced",
     "dep:image",
-    "dep:indicatif",
     "dep:rfd",
-    "dep:signal-hook",
 ]
 
 [dependencies]

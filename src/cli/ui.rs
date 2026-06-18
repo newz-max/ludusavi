@@ -12,6 +12,7 @@ fn get_separator(gui: bool) -> &'static str {
     }
 }
 
+#[cfg(feature = "app")]
 fn title(games: &[String]) -> String {
     match games.len() {
         0 => TRANSLATOR.app_name(),
@@ -57,15 +58,23 @@ pub fn alert_with_error(games: &[String], gui: bool, force: bool, msg: &str, err
 
 pub fn alert(games: &[String], gui: bool, force: bool, msg: &str) -> Result<(), Error> {
     log::debug!("Showing alert to user (GUI={}, force={}): {}", gui, force, msg);
+    #[cfg(not(feature = "app"))]
+    let _ = games;
+
     if gui {
-        rfd::MessageDialog::new()
-            .set_title(title(games))
-            .set_description(msg)
-            .set_level(rfd::MessageLevel::Error)
-            .set_buttons(rfd::MessageButtons::Ok)
-            .show();
-        Ok(())
-    } else if !force {
+        #[cfg(feature = "app")]
+        {
+            rfd::MessageDialog::new()
+                .set_title(title(games))
+                .set_description(msg)
+                .set_level(rfd::MessageLevel::Error)
+                .set_buttons(rfd::MessageButtons::Ok)
+                .show();
+            return Ok(());
+        }
+    }
+
+    if !force {
         // TODO: Dialoguer doesn't have an alert type.
         // https://github.com/console-rs/dialoguer/issues/287
         println!("{msg}");
@@ -111,32 +120,38 @@ pub fn confirm(games: &[String], gui: bool, force: bool, preview: bool, msg: &st
         return Ok(true);
     }
 
+    #[cfg(not(feature = "app"))]
+    let _ = games;
+
     if gui {
-        let choice = match rfd::MessageDialog::new()
-            .set_title(title(games))
-            .set_description(msg)
-            .set_level(rfd::MessageLevel::Info)
-            .set_buttons(rfd::MessageButtons::YesNo)
-            .show()
+        #[cfg(feature = "app")]
         {
-            rfd::MessageDialogResult::Yes => true,
-            rfd::MessageDialogResult::No => false,
-            rfd::MessageDialogResult::Ok => true,
-            rfd::MessageDialogResult::Cancel => false,
-            rfd::MessageDialogResult::Custom(_) => false,
-        };
-        log::debug!("User responded: {}", choice);
-        Ok(choice)
-    } else {
-        match dialoguer::Confirm::new().with_prompt(msg).interact() {
-            Ok(value) => {
-                log::debug!("User responded: {}", value);
-                Ok(value)
-            }
-            Err(err) => {
-                log::error!("Unable to request confirmation: {:?}", err);
-                Err(Error::CliUnableToRequestConfirmation)
-            }
+            let choice = match rfd::MessageDialog::new()
+                .set_title(title(games))
+                .set_description(msg)
+                .set_level(rfd::MessageLevel::Info)
+                .set_buttons(rfd::MessageButtons::YesNo)
+                .show()
+            {
+                rfd::MessageDialogResult::Yes => true,
+                rfd::MessageDialogResult::No => false,
+                rfd::MessageDialogResult::Ok => true,
+                rfd::MessageDialogResult::Cancel => false,
+                rfd::MessageDialogResult::Custom(_) => false,
+            };
+            log::debug!("User responded: {}", choice);
+            return Ok(choice);
+        }
+    }
+
+    match dialoguer::Confirm::new().with_prompt(msg).interact() {
+        Ok(value) => {
+            log::debug!("User responded: {}", value);
+            Ok(value)
+        }
+        Err(err) => {
+            log::error!("Unable to request confirmation: {:?}", err);
+            Err(Error::CliUnableToRequestConfirmation)
         }
     }
 }
@@ -161,6 +176,9 @@ pub fn ask_cloud_conflict(
         return Ok(None);
     }
 
+    #[cfg(not(feature = "app"))]
+    let _ = games;
+
     fn parse_response(raw: &str) -> Option<SyncDirection> {
         if raw == TRANSLATOR.download_button() {
             Some(SyncDirection::Download)
@@ -172,44 +190,47 @@ pub fn ask_cloud_conflict(
     }
 
     if gui {
-        let choice = match rfd::MessageDialog::new()
-            .set_title(title(games))
-            .set_description(msg)
-            .set_level(rfd::MessageLevel::Info)
-            .set_buttons(rfd::MessageButtons::YesNoCancelCustom(
-                TRANSLATOR.ignore_button(),
-                TRANSLATOR.download_button(),
-                TRANSLATOR.upload_button(),
-            ))
-            .show()
+        #[cfg(feature = "app")]
         {
-            rfd::MessageDialogResult::Yes => None,
-            rfd::MessageDialogResult::No => None,
-            rfd::MessageDialogResult::Ok => None,
-            rfd::MessageDialogResult::Cancel => None,
-            rfd::MessageDialogResult::Custom(raw) => parse_response(&raw),
-        };
-        log::debug!("User responded: {:?}", choice);
-        Ok(choice)
-    } else {
-        let options = vec![
-            TRANSLATOR.ignore_button(),
-            TRANSLATOR.download_button(),
-            TRANSLATOR.upload_button(),
-        ];
+            let choice = match rfd::MessageDialog::new()
+                .set_title(title(games))
+                .set_description(msg)
+                .set_level(rfd::MessageLevel::Info)
+                .set_buttons(rfd::MessageButtons::YesNoCancelCustom(
+                    TRANSLATOR.ignore_button(),
+                    TRANSLATOR.download_button(),
+                    TRANSLATOR.upload_button(),
+                ))
+                .show()
+            {
+                rfd::MessageDialogResult::Yes => None,
+                rfd::MessageDialogResult::No => None,
+                rfd::MessageDialogResult::Ok => None,
+                rfd::MessageDialogResult::Cancel => None,
+                rfd::MessageDialogResult::Custom(raw) => parse_response(&raw),
+            };
+            log::debug!("User responded: {:?}", choice);
+            return Ok(choice);
+        }
+    }
 
-        let dialog = dialoguer::Select::new().with_prompt(msg).items(&options);
+    let options = vec![
+        TRANSLATOR.ignore_button(),
+        TRANSLATOR.download_button(),
+        TRANSLATOR.upload_button(),
+    ];
 
-        match dialog.interact() {
-            Ok(index) => {
-                let choice = parse_response(&options[index]);
-                log::debug!("User responded: {} -> {:?}", index, choice);
-                Ok(choice)
-            }
-            Err(err) => {
-                log::error!("Unable to request confirmation: {:?}", err);
-                Err(Error::CliUnableToRequestConfirmation)
-            }
+    let dialog = dialoguer::Select::new().with_prompt(msg).items(&options);
+
+    match dialog.interact() {
+        Ok(index) => {
+            let choice = parse_response(&options[index]);
+            log::debug!("User responded: {} -> {:?}", index, choice);
+            Ok(choice)
+        }
+        Err(err) => {
+            log::error!("Unable to request confirmation: {:?}", err);
+            Err(Error::CliUnableToRequestConfirmation)
         }
     }
 }
