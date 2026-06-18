@@ -6,10 +6,7 @@ use crate::{
 /// GUI looks nicer with an extra empty line as separator, but for terminals a single
 /// newline is sufficient
 fn get_separator(gui: bool) -> &'static str {
-    match gui {
-        true => "\n\n",
-        false => "\n",
-    }
+    if cfg!(feature = "app") && gui { "\n\n" } else { "\n" }
 }
 
 #[cfg(feature = "app")]
@@ -21,6 +18,7 @@ fn title(games: &[String]) -> String {
     }
 }
 
+#[cfg(feature = "app")]
 fn pause() -> Result<(), Error> {
     use std::io::prelude::{Read, Write};
 
@@ -58,12 +56,17 @@ pub fn alert_with_error(games: &[String], gui: bool, force: bool, msg: &str, err
 
 pub fn alert(games: &[String], gui: bool, force: bool, msg: &str) -> Result<(), Error> {
     log::debug!("Showing alert to user (GUI={}, force={}): {}", gui, force, msg);
-    #[cfg(not(feature = "app"))]
-    let _ = games;
 
-    if gui {
-        #[cfg(feature = "app")]
-        {
+    #[cfg(not(feature = "app"))]
+    {
+        let _ = (games, gui, force);
+        eprintln!("{msg}");
+        Ok(())
+    }
+
+    #[cfg(feature = "app")]
+    {
+        if gui {
             rfd::MessageDialog::new()
                 .set_title(title(games))
                 .set_description(msg)
@@ -72,16 +75,16 @@ pub fn alert(games: &[String], gui: bool, force: bool, msg: &str) -> Result<(), 
                 .show();
             return Ok(());
         }
-    }
 
-    if !force {
-        // TODO: Dialoguer doesn't have an alert type.
-        // https://github.com/console-rs/dialoguer/issues/287
-        println!("{msg}");
-        pause()
-    } else {
-        println!("{msg}");
-        Ok(())
+        if !force {
+            // TODO: Dialoguer doesn't have an alert type.
+            // https://github.com/console-rs/dialoguer/issues/287
+            println!("{msg}");
+            pause()
+        } else {
+            println!("{msg}");
+            Ok(())
+        }
     }
 }
 
