@@ -1583,6 +1583,142 @@ mod tests {
     }
 
     #[test]
+    #[cfg(feature = "app")]
+    fn accepts_app_gui_arguments() {
+        check_args(
+            &["ludusavi", "backup", "--gui"],
+            Cli {
+                config: None,
+                no_manifest_update: false,
+                try_manifest_update: false,
+                debug: false,
+                sub: Some(Subcommand::Backup {
+                    preview: false,
+                    path: None,
+                    force: false,
+                    no_force_cloud_conflict: false,
+                    wine_prefix: None,
+                    api: false,
+                    gui: true,
+                    sort: None,
+                    format: None,
+                    compression: None,
+                    compression_level: None,
+                    full_limit: None,
+                    differential_limit: None,
+                    cloud_sync: false,
+                    no_cloud_sync: false,
+                    dump_registry: false,
+                    include_disabled: false,
+                    ask_downgrade: false,
+                    games: vec![],
+                }),
+            },
+        );
+
+        check_args(
+            &["ludusavi", "restore", "--gui"],
+            Cli {
+                config: None,
+                no_manifest_update: false,
+                try_manifest_update: false,
+                debug: false,
+                sub: Some(Subcommand::Restore {
+                    preview: false,
+                    path: None,
+                    force: false,
+                    no_force_cloud_conflict: false,
+                    api: false,
+                    gui: true,
+                    sort: None,
+                    backup: None,
+                    cloud_sync: false,
+                    no_cloud_sync: false,
+                    dump_registry: false,
+                    include_disabled: false,
+                    ask_downgrade: false,
+                    games: vec![],
+                }),
+            },
+        );
+
+        check_args(
+            &["ludusavi", "wrap", "--name", "game1", "--gui", "game.exe"],
+            Cli {
+                config: None,
+                no_manifest_update: false,
+                try_manifest_update: false,
+                debug: false,
+                sub: Some(Subcommand::Wrap {
+                    name_source: WrapSubcommand {
+                        infer: None,
+                        name: Some(s("game1")),
+                    },
+                    force: false,
+                    force_backup: false,
+                    force_restore: false,
+                    no_backup: false,
+                    no_restore: false,
+                    no_force_cloud_conflict: false,
+                    gui: true,
+                    path: None,
+                    format: None,
+                    compression: None,
+                    compression_level: None,
+                    full_limit: None,
+                    differential_limit: None,
+                    cloud_sync: false,
+                    no_cloud_sync: false,
+                    ask_downgrade: false,
+                    commands: vec![s("game.exe")],
+                }),
+            },
+        );
+
+        check_args(
+            &["ludusavi", "cloud", "upload", "--gui"],
+            Cli {
+                config: None,
+                no_manifest_update: false,
+                try_manifest_update: false,
+                debug: false,
+                sub: Some(Subcommand::Cloud {
+                    sub: CloudSubcommand::Upload {
+                        local: None,
+                        cloud: None,
+                        force: false,
+                        preview: false,
+                        api: false,
+                        gui: true,
+                        games: vec![],
+                    },
+                }),
+            },
+        );
+
+        check_args(
+            &["ludusavi", "cloud", "download", "--gui"],
+            Cli {
+                config: None,
+                no_manifest_update: false,
+                try_manifest_update: false,
+                debug: false,
+                sub: Some(Subcommand::Cloud {
+                    sub: CloudSubcommand::Download {
+                        local: None,
+                        cloud: None,
+                        force: false,
+                        preview: false,
+                        api: false,
+                        gui: true,
+                        games: vec![],
+                    },
+                }),
+            },
+        );
+    }
+
+    #[test]
     #[cfg(not(feature = "app"))]
     fn rejects_cli_gui_subcommand() {
         check_args_err(&["ludusavi", "gui"], clap::error::ErrorKind::InvalidSubcommand);
@@ -1595,5 +1731,18 @@ mod tests {
             &["ludusavi", "backup", "--gui"],
             clap::error::ErrorKind::UnknownArgument,
         );
+    }
+
+    #[test]
+    #[cfg(not(feature = "app"))]
+    fn rejects_cli_gui_arguments() {
+        for args in [
+            &["ludusavi", "restore", "--gui"][..],
+            &["ludusavi", "wrap", "--name", "game1", "--gui", "game.exe"][..],
+            &["ludusavi", "cloud", "upload", "--gui"][..],
+            &["ludusavi", "cloud", "download", "--gui"][..],
+        ] {
+            check_args_err(args, clap::error::ErrorKind::UnknownArgument);
+        }
     }
 }
