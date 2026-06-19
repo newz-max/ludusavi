@@ -182,12 +182,20 @@ unsafe fn detach_console(debug: bool) {
     }
 }
 
+fn resolve_config_dir(path: &std::path::Path) -> std::path::PathBuf {
+    if path.is_absolute() {
+        path.to_path_buf()
+    } else {
+        std::env::current_dir().unwrap_or_else(|_| std::path::PathBuf::from(".")).join(path)
+    }
+}
+
 fn main() {
     let mut failed = false;
     let args = cli::parse();
 
     if let Some(config_dir) = args.as_ref().ok().and_then(|args| args.config.as_ref()) {
-        *CONFIG_DIR.lock().unwrap() = Some(config_dir.clone());
+        *CONFIG_DIR.lock().unwrap() = Some(resolve_config_dir(config_dir));
     }
     let debug = args.as_ref().map(|x| x.debug).unwrap_or_default();
 
